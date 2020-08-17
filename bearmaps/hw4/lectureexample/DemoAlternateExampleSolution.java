@@ -30,7 +30,7 @@ public class DemoAlternateExampleSolution {
         int start = 0;
         int goal = 5;
 
-        ShortestPathsSolver<Integer> solver = new LazySolver<>(wdg, start, goal, 10);
+        ShortestPathsSolver<Integer> solver = new AStarSolver<>(wdg, start, goal, 10);
         SolutionPrinter.summarizeSolution(solver, " => ");
     }
 }
