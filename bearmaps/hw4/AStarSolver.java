@@ -5,35 +5,48 @@ import bearmaps.proj2ab.DoubleMapPQ;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
-    DoubleMapPQ<Vertex> fringe;
-    double timeSpent;
-    AStarGraph<Vertex> graph;
-    HashMap<Vertex, Double> distTo;
-    HashMap<Vertex, Vertex> edgeTo;
-    Set<Vertex> visited;
+    private DoubleMapPQ<Vertex> fringe;
+    private double timeSpent;
+    private AStarGraph<Vertex> graph;
+    private HashMap<Vertex, Double> distTo;
+    private HashMap<Vertex, Vertex> edgeTo;
+    private Set<Vertex> visited;
+    private SolverOutcome outcome;
+    private int numStatesExplored;
+    private Vertex goal;
 
     public AStarSolver(AStarGraph<Vertex> input, Vertex start, Vertex end, double timeout){
-      fringe = new DoubleMapPQ<Vertex>();
-      timeSpent = 0;
-      graph = input;
-      distTo = new HashMap<>();
-      edgeTo = new HashMap<>();
-      visited = new HashSet<>();
+      this.goal = end;
+      this.fringe = new DoubleMapPQ<Vertex>();
+      this.timeSpent = 0;
+      this.graph = input;
+      this.distTo = new HashMap<>();
+      this.edgeTo = new HashMap<>();
+      this.visited = new HashSet<>();
 
-      fringe.add(start, h(start, end));
+      this.fringe.add(start, h(start, end));
+      this.distTo.put(start, 0.0);
+      this.edgeTo.put(start, null);
+      this.visited.add(start);
       Stopwatch sw = new Stopwatch();
-      distTo.put(start, 0.0);
-      edgeTo.put(start, null);
-      visited.add(start);
-
       while(fringe.size() >= 1 && !(fringe.getSmallest().equals(end)) && timeSpent < timeout){
         Vertex smallestVertex = fringe.removeSmallest();
+        numStatesExplored++;
         relax(smallestVertex, end);
         timeSpent = sw.elapsedTime();
-        System.out.println(smallestVertex);
       }
+
+      if(timeSpent > timeout){
+        outcome = SolverOutcome.TIMEOUT;
+      }else if(fringe.getSmallest().equals(end)){
+        outcome = SolverOutcome.SOLVED;
+      }else{
+        outcome = SolverOutcome.UNSOLVABLE;
+      }
+
     }
 
     //Very crude heuristic that just return the min weight edge out of each vertex
@@ -68,18 +81,36 @@ public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
     }
 
     public SolverOutcome outcome(){
-      return null;
+      return this.outcome;
     }
+
     public List<Vertex> solution(){
-      return null;
+      LinkedList<Vertex> solution = new LinkedList<>();
+      if(outcome==SolverOutcome.TIMEOUT || outcome==SolverOutcome.UNSOLVABLE){
+        return new ArrayList<>();
+      }else{
+        solution.addFirst(this.goal);
+        Vertex from = edgeTo.get(this.goal);
+        while(from != null){
+          solution.addFirst(from);
+          from = edgeTo.get(from);
+        }
+        return new ArrayList<>(solution);
+      }
     }
+
     public double solutionWeight(){
-      return -1;
+      if(outcome==SolverOutcome.TIMEOUT || outcome==SolverOutcome.UNSOLVABLE){
+        return 0;
+      }else{
+        return distTo.get(this.goal);
+      }
     }
+
     public int numStatesExplored(){
-      return -1;
+      return this.numStatesExplored;
     }
     public double explorationTime(){
-      return -1;
+      return timeSpent;
     }
 }
